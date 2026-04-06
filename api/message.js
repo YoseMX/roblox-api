@@ -1,31 +1,34 @@
-let script = "--none";
-let currentServer = null; // server ID allowed to execute
+// api/message.js
+let scriptStore = { script: "--none", server_id: null };
 
+// Your secret key
 const SECRET_KEY = "LMAOXD_Key768675";
 
 export default async function handler(req, res) {
     const body = req.body || {};
     const key = body.LMAOXD_Key768675 || req.query.LMAOXD_Key768675;
-    const serverID = body.server_id || req.query.server_id;
 
-    if (key !== SECRET_KEY) return res.status(401).json({ error: "Unauthorized" });
-
-    // POST: store script and assign a server to execute it
-    if (req.method === "POST") {
-        script = body.script || "--none";
-        currentServer = serverID || null;
-        return res.status(200).json({ status: "stored", server: currentServer });
+    if (key !== SECRET_KEY) {
+        return res.status(401).json({ error: "Unauthorized: AntiSkid flagged you" });
     }
 
-    // GET: only allow the current server to fetch
+    // POST: store script + server ID
+    if (req.method === "POST") {
+        scriptStore.script = body.script || "--none";
+        scriptStore.server_id = body.server_id || null; // optional
+        return res.status(200).json({ status: "stored", server_id: scriptStore.server_id });
+    }
+
+    // GET: return script only if server_id matches query (optional)
     if (req.method === "GET") {
-        if (serverID && serverID === currentServer) {
-            const temp = script;
-            script = "--none";      // reset after fetch
-            currentServer = null;   // reset lock
+        const requestedServer = req.query.server_id || null;
+        if (!requestedServer || requestedServer === scriptStore.server_id) {
+            const temp = scriptStore.script;
+            scriptStore.script = "--none"; // reset after fetch
+            scriptStore.server_id = null;  // reset
             return res.status(200).send(temp);
         } else {
-            return res.status(200).send("--none");
+            return res.status(200).send("--none"); // script is not for this server
         }
     }
 
