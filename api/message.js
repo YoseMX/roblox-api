@@ -1,7 +1,5 @@
 // api/message.js
-let scriptStore = { script: "--none", server_id: null };
-
-// Your secret key
+let scriptStore = { script: "--none", targetUser: null };
 const SECRET_KEY = "LMAOXD_Key768675";
 
 export default async function handler(req, res) {
@@ -9,26 +7,29 @@ export default async function handler(req, res) {
     const key = body.LMAOXD_Key768675 || req.query.LMAOXD_Key768675;
 
     if (key !== SECRET_KEY) {
-        return res.status(401).json({ error: "Unauthorized: AntiSkid flagged you" });
+        return res.status(401).json({ error: "Unauthorized: Invalid Key" });
     }
 
-    // POST: store script + server ID
+    // POST: store script + target username
     if (req.method === "POST") {
         scriptStore.script = body.script || "--none";
-        scriptStore.server_id = body.server_id || null; // optional
-        return res.status(200).json({ status: "stored", server_id: scriptStore.server_id });
+        scriptStore.targetUser = body.targetUser || null; // optional
+        return res.status(200).json({ status: "stored", targetUser: scriptStore.targetUser });
     }
 
-    // GET: return script only if server_id matches query (optional)
+    // GET: return script only if server has that user
+    // server provides ?username=<playername>
     if (req.method === "GET") {
-        const requestedServer = req.query.server_id || null;
-        if (!requestedServer || requestedServer === scriptStore.server_id) {
+        const requestingServerUsername = req.query.username || null;
+
+        // Only return script if username matches
+        if (requestingServerUsername && requestingServerUsername === scriptStore.targetUser) {
             const temp = scriptStore.script;
-            scriptStore.script = "--none"; // reset after fetch
-            scriptStore.server_id = null;  // reset
+            scriptStore.script = "--none";     // reset after fetch
+            scriptStore.targetUser = null;     // reset
             return res.status(200).send(temp);
         } else {
-            return res.status(200).send("--none"); // script is not for this server
+            return res.status(200).send("--none");
         }
     }
 
